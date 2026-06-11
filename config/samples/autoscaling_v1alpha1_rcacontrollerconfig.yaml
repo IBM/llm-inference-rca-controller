@@ -1,0 +1,33 @@
+apiVersion: autoscaling.x-llmd.ai/v1alpha1
+kind: RCAControllerConfig
+metadata:
+  labels:
+    app.kubernetes.io/name: rca-controller
+    app.kubernetes.io/managed-by: kustomize
+  name: rcacontrollerconfig-sample
+spec:
+  # Monitoring configuration
+  monitoring:
+    endpoint: "http://prometheus-server.monitoring.svc.cluster.local:9090"
+    customQueries:
+      # Base metric names (service filter will be applied automatically)
+      rpsQuery: "vllm:request_success_total"
+      promptTokenQuery: "vllm:prompt_tokens_total"
+      generationTokenQuery: "vllm:generation_tokens_total"
+      interTokenLatencyQuery: "vllm:inter_token_latency_seconds"
+      timeToFirstTokenLatencyQuery: "vllm:time_to_first_token_seconds"
+      endToEndLatencyBucketQuery: "vllm:e2e_request_latency_seconds_bucket"
+      # Device resource metrics - maps resource type to usage/allocation queries
+      deviceResourceMetrics:
+        compute:
+          usageQuery: "vllm:gpu_active_thread_percentage"
+          allocationQuery: "vllm:gpu_compute_allocation_percentage"
+        memory:
+          usageQuery: "vllm:gpu_memory_usage_bytes"
+          allocationQuery: "vllm:gpu_memory_allocation_bytes"
+    rateRangeSeconds: 60  # Time range for rate() calculations
+    latencyPercentile: 0.95  # P95 latency (0.0-1.0) for histogram_quantile()
+  
+  # Logging configuration
+  logging:
+    level: INFO

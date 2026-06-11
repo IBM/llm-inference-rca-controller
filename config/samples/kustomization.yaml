@@ -1,0 +1,5 @@
+## Append samples of your project ##
+resources:
+- autoscaling_v1alpha1_resourceclaimautoscaler.yaml
+- autoscaling_v1alpha1_rcacontrollerconfig.yaml
+# +kubebuilder:scaffold:manifestskustomizesamples

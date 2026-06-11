@@ -1,0 +1,74 @@
+apiVersion: autoscaling.x-llmd.ai/v1alpha1
+kind: ResourceClaimAutoscaler
+metadata:
+  labels:
+    app.kubernetes.io/name: rca-controller
+    app.kubernetes.io/managed-by: kustomize
+  name: resourceclaimautoscaler-sample
+spec:
+  # Target selector - defines what to scale
+  target:
+    serviceRef:
+      name: vllm-service
+      namespace: default
+    resourceRef:
+      deviceClassName: gpu.nvidia.com
+    hint:
+      modelID: "llama-2-7b"
+      prefillOverheadMilliseconds: 10
+      prefillTimePerTokenMilliseconds: 2
+      interTokenLatencyMilliseconds: 5
+      PrefixCacheHitRate: 0.8
+      kvCacheSpeedup: 2.0
+      # Resource hints - defines resource usage characteristics
+      resourceHints:
+        compute:
+          overprovisionMaxSpeedup: 2.0  # Max 2x speedup from overprovisioning
+          idleUsage: "5"                 # 5% base GPU usage when idle
+          perTokenUsage: "0.1"           # 0.1% GPU usage per token
+          kvCacheEffect: 0.3             # 30% reduction when KV cache hits
+        memory:
+          overprovisionMaxSpeedup: 1.5  # Max 1.5x speedup from overprovisioning
+          idleUsage: "14Gi"              # 14 GiB for model weights (7B FP16)
+          perTokenUsage: "32"            # 32 bytes per token for KV cache
+          kvCacheEffect: 0.5             # 50% reduction when KV cache hits
+      # Multi-GPU efficiency configuration
+      multiGPUEfficiency:
+        model: "default"                 # Options: default, optimistic, pessimistic, custom
+        minEfficiency: 0.75              # Minimum efficiency for multi-GPU setups
+  
+  # Target latency - defines latency SLOs
+  targetLatency:
+    endToEndLatencyMilliseconds: 1000
+    timeToFirstTokenLatencyMilliseconds: 200
+    interTokenLatencyMilliseconds: 50
+    toleranceMilliseconds: 100
+  
+  # Behavior - defines how to scale
+  behavior:
+    scaleUp:
+      trigger:
+        periodSeconds: 60
+      gracePeriodSeconds: 60
+      singleTimeScalingLimit: 2
+    scaleDown:
+      trigger:
+        periodSeconds: 60
+      gracePeriodSeconds: 300
+      singleTimeScalingLimit: 1
+  
+  # MinTargetUtilization - defines minimum target utilization per resource type
+  # When (usage / allocation) falls below this threshold, scale-down may be triggered
+  minTargetUtilization:
+    nvidia.com/gpu: "0.7"    # Target 70% GPU utilization
+    memory: "0.8"            # Target 80% memory utilization
+  
+  # Constraints - defines scaling limits
+  constraints:
+    minReplicas: 1
+    maxReplicas: 10
+    minCountPerReplica: 1
+    maxCountPerReplica: 4
+    maxCapacityPerCount:
+      nvidia.com/gpu: 8
+      memory: 32
