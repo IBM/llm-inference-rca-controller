@@ -14,8 +14,8 @@ The below figure shows the current architecture of the project. Details of the c
 
 ### Upstream Integration Proposals
 
-- [Proposal(s) to llm-d/llm-d-workload-variant-autoscaler](./llm-d/llm-d-workload-variant-autoscaler/)
-- [Proposal(s) to kubernetes/autoscaler](./kubernetes/autoscaler/)
+- [Proposal(s) to llm-d/llm-d-workload-variant-autoscaler](./llm-d/llm-d-workload-variant-autoscaler/) - [Unavailable]
+- [Proposal(s) to kubernetes/autoscaler](./kubernetes/autoscaler/) - [Initial Draft Available]
 
 To complete the picture, remaining components and modifications are planned as below.
 
@@ -23,14 +23,14 @@ To complete the picture, remaining components and modifications are planned as b
 
 ### New Projects
 
-- [llm-d/rca-controller](./llm-d/rca-controller/) - Standalone ResourceClaim autoscaler controller
-- [tbd/prometheus-vpa-recommender](./tbd/prometheus-vpa-recommender/) - Prometheus-based VPA recommender
+- [llm-d/rca-controller](./llm-d/rca-controller/) - Standalone ResourceClaim autoscaler controller - [Unavailable]
+- [tbd/prometheus-vpa-recommender](./tbd/prometheus-vpa-recommender/) - Prometheus-based VPA recommender - [Initial Draft Available]
 
 ### Enhancements to Existing Projects
 
-- [kubernetes-sigs/dra-example-driver](https://github.com/kubernetes-sigs/dra-example-driver): Add consumable capacity feature support
-- [llm-d/llm-d-inference-sim](https://github.com/llm-d/llm-d-inference-sim): Add resource consumption estimation and metrics
-- [vllm-project/vllm](https://github.com/vllm-project/vllm): Add resource consumption metrics
+- [kubernetes-sigs/dra-example-driver](https://github.com/kubernetes-sigs/dra-example-driver): Add consumable capacity feature support [PR#236](https://github.com/kubernetes-sigs/dra-example-driver/pull/236)
+- [llm-d/llm-d-inference-sim](https://github.com/llm-d/llm-d-inference-sim): Add resource consumption estimation and metrics - [Unavailable]
+- [vllm-project/vllm](https://github.com/vllm-project/vllm): Add resource consumption metrics - [Unavailable]
 
 ## Next Phase: In-Place Resizing Feature
 
@@ -78,10 +78,10 @@ To achieve this, we are planning to propose enhancements to:
 
 **Deliverables**:
 
-- [ ] Working prototype of integrated autoscaler
-- [ ] Comprehensive test suite
-- [ ] Documentation of integration points
-- [ ] Performance benchmarks
+- Working prototype of integrated autoscaler
+- Comprehensive test suite
+- Documentation of integration points
+- Performance benchmarks
 
 ### Phase 3: Research and Refinement
 
