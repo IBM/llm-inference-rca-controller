@@ -15,6 +15,12 @@ Enable automatic scaling of DRA ResourceClaims based on workload metrics, provid
 
 [kubernetes/autoscaler](https://github.com/kubernetes/autoscaler)
 
+## Links
+
+- [Proposal Draft](https://github.com/sunya-ch/k8s-autoscaler/blob/dra-autoscaler/vertical-pod-autoscaler/enhancements/NNNN-dra-recreate/README.md)
+
 ## Timeline
 
-TBD
+- 2026-06-22: Study VPA architecture and start implementation
+- 2026-06-30: Finsih initial implementation with e2e test
+- 2026-07-01: Write proposal draft
