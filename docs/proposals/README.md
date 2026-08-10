@@ -1,10 +1,52 @@
 # Proposals for Migrating this Project to Upstreams
 
-This project includes end-to-end resource claim autoscaling systems for LLM inference workloads. However, for long-term planning, we are planning to migrate the initiatives inside this project to applicable upstream projects. This document records the proposals for the migration.
+> This project includes end-to-end resource claim autoscaling systems for LLM inference workloads. However, for long-term planning, we are planning to migrate the initiatives inside this project to applicable upstream projects. This document records the proposals for the migration.
+
+## Table of Contents
+
+- [Overview](#overview)
+  - [Multi-Dimensional Scaling Design Goals](#multi-dimensional-scaling-design-goals)
+  - [Technical Challenges](#technical-challenges)
+- [Current Architecture and Target Upstreams](#current-architecture-and-target-upstreams)
+  - [Upstream Integration Proposals](#upstream-integration-proposals)
+  - [New Projects](#new-projects)
+  - [Enhancements to Existing Projects](#enhancements-to-existing-projects)
+- [Next Phase: In-Place Resizing Feature](#next-phase-in-place-resizing-feature)
+- [Roadmap](#roadmap)
+  - [Phase 1: Planning](#phase-1-planning)
+  - [Phase 2: Core Integration](#phase-2-core-integration)
+  - [Phase 3: Research and Refinement](#phase-3-research-and-refinement)
+  - [Phase 4: Upstream Demonstration and Donation](#phase-4-upstream-demonstration-and-donation)
+  - [Phase 5: Production Rollout](#phase-5-production-rollout-months-13-18)
+- [Contributing](#contributing)
 
 ## Overview
 
-The ResourceClaim Autoscaler (RCA) Controller provides automated scaling of Dynamic Resource Allocation (DRA) resources for LLM inference services. The system uses queue-theory-based optimization to determine optimal resource configurations and manages the lifecycle of ResourceClaims to achieve target latency SLOs while minimizing costs.
+LLM inference workloads on GPU clusters face a fundamental tension: hardware is expensive, demand is bursty, and neither purely horizontal scaling (adding pods) nor static resource allocation alone can efficiently balance latency SLOs with cost. This project addresses that tension through **multi-dimensional scaling** — jointly optimising GPU resource allocations (VRAM, compute slices) and replica count at runtime, without requiring pre-supplied model metadata or hardware-specific performance profiles.
+
+The ResourceClaim Autoscaler (RCA) Controller implements this via queue-theory-based optimization over Dynamic Resource Allocation (DRA) resources, managing the full lifecycle of ResourceClaims to meet latency targets while minimizing hardware waste. The proposals in this document cover how these capabilities will be migrated to and integrated with upstream projects, and what enhancements are needed across the Kubernetes, llm-d, and vLLM ecosystems to realize the multi-dimensional scaling goals and overcome the technical challenges described below.
+
+### Multi-Dimensional Scaling Design Goals
+
+| Goal | Description |
+| --- | --- |
+| **Maximize Hardware Yield** | Squeeze maximum utilization out of expensive physical hardware before triggering costly node-level scale-ups. |
+| **Zero-Downtime Adaptability** | Adjust GPU resource allocations (VRAM, compute cores) on the fly without restarting pods or interrupting long-running AI training jobs. |
+| **Transparent Resource Delivery** | Abstract underlying hardware configurations (like MIG partitions or time-slicing) so developers can request fractional or dynamic GPU resources via standard YAML specs. |
+| **Granular Cost Efficiency** | Enable micro-scaling of resources to minimize waste during idle or low-demand periods (e.g., downsizing a GPU slice when an LLM inference service is quiet). |
+| **Metadata-Free Heterogeneous Cluster Support** | Enable accurate multi-dimensional scaling decisions across mixed GPU architectures without requiring pre-supplied model metadata or hardware-specific performance profiles, relying instead on runtime observation and adaptive estimation. |
+
+### Technical Challenges
+
+| Challenge | Description |
+| --- | --- |
+| **HPA Alignment & Race Conditions** | Prevent scaling conflicts where HPA tries to scale out (add pods) while multi-dimensional scaling mechanisms try to scale up (add VRAM/compute), resulting in resource thrashing and instability. |
+| **Monolithic Memory Boundaries** | Unlike CPU or RAM, physical GPU memory (VRAM) cannot be easily hot-plugged, dynamically shared, or paged to disk at the hypervisor layer without significant performance penalties. |
+| **Dynamic Device Re-binding** | Overcoming the Kubernetes device management framework's limitation, which traditionally binds GPU devices to containers only at initial container creation time. |
+| **Extended Bootstrapping Latency** | Initializing drivers, CUDA contexts, and reloading massive AI models into VRAM during a multi-dimensional resizing event can introduce severe application lag. |
+| **Hardware-Enforced Slicing Limits** | Managing rigid physical partitioning frameworks (like NVIDIA MIG), which require static node-level configuration changes and cannot seamlessly resize a partition on a running GPU. |
+| **Opaque Per-Process Resource Utilization** | GPU drivers and runtime environments often expose only aggregate device-level metrics, making it difficult to attribute actual VRAM and compute consumption to individual inference processes or model replicas. |
+| **Incomplete Model & Performance Profiles on Heterogeneous GPUs** | Model metadata (e.g., memory footprint, compute intensity) and performance profiles (throughput, latency curves) are frequently unavailable or untransferred across different GPU architectures, preventing accurate multi-dimensional scaling decisions in heterogeneous clusters. |
 
 ## Current Architecture and Target Upstreams
 
