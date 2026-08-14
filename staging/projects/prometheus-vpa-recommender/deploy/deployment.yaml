@@ -1,0 +1,56 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-vpa-recommender
+  namespace: kube-system
+  labels:
+    app: prometheus-vpa-recommender
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus-vpa-recommender
+  template:
+    metadata:
+      labels:
+        app: prometheus-vpa-recommender
+    spec:
+      serviceAccountName: prometheus-vpa-recommender
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 65532
+      containers:
+      - name: recommender
+        image: localhost/prometheus-vpa-recommender:v1.0.0
+        imagePullPolicy: IfNotPresent
+        args:
+          - --recommender-name=prometheus
+          - --prometheus-url=http://prometheus.default.svc.cluster.local:9090
+          - --prometheus-insecure-skip-verify=false
+          - --update-interval=30s
+          - --capacity-metric-name=desired_capacity
+          - --v=4
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        ports:
+        - name: metrics
+          containerPort: 8080
+          protocol: TCP
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: metrics
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: metrics
+          initialDelaySeconds: 5
+          periodSeconds: 5

@@ -1,0 +1,38 @@
+---
+# ConfigMap holds the metrics CSV that the replayer will serve.
+# Edit the data under metrics.csv to change what the server replays,
+# then restart the Deployment (kubectl rollout restart deployment metric-replayer).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metric-replayer-data
+  namespace: default
+data:
+  metrics.csv: |
+    # timestamp, variant_name, target_container, accelerator_type, capacity, value
+    #
+    # accelerator_type and capacity both empty → desired_replica sample
+    # accelerator_type or capacity non-empty  → desired_capacity sample
+    #
+    # Timestamps are replayed relative to server start:
+    #   first sample is visible immediately; each subsequent sample
+    #   appears as many real seconds later as the gap in the file.
+    #   (samples below are spaced 30 s apart)
+
+    # desired_replica
+    1700000000, llm-d-sim-demo, , , , 2
+    1700000030, llm-d-sim-demo, , , , 3
+    1700000060, llm-d-sim-demo, , , , 4
+    1700000090, llm-d-sim-demo, , , , 3
+
+    # desired_capacity — gpu compute (0-100)
+    1700000000, llm-d-sim-demo, vllm-container, gpu.example.com, compute, 40
+    1700000030, llm-d-sim-demo, vllm-container, gpu.example.com, compute, 60
+    1700000060, llm-d-sim-demo, vllm-container, gpu.example.com, compute, 75
+    1700000090, llm-d-sim-demo, vllm-container, gpu.example.com, compute, 60
+
+    # desired_capacity — gpu memory (bytes)
+    1700000000, llm-d-sim-demo, vllm-container, gpu.example.com, memory, 14294967296
+    1700000030, llm-d-sim-demo, vllm-container, gpu.example.com, memory, 18589934592
+    1700000060, llm-d-sim-demo, vllm-container, gpu.example.com, memory, 18589934592
+    1700000090, llm-d-sim-demo, vllm-container, gpu.example.com, memory, 16442450944

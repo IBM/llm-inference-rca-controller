@@ -1,0 +1,37 @@
+# Metric replay file for demo/metric-replayer
+#
+# Format (6 columns, CSV):
+#   timestamp, variant_name, target_container, accelerator_type, capacity, value
+#
+# Rules:
+#   - When accelerator_type and capacity are both empty the row is a desired_replica sample.
+#   - When accelerator_type or capacity is non-empty the row is a desired_capacity sample.
+#   - timestamp is Unix epoch seconds (integer or float).
+#
+# Replay semantics (time-based):
+#   The earliest timestamp in the file is the "origin" (here: 1700000000).
+#   When the server starts, that origin is pinned to the current wall-clock time.
+#   The series then plays forward in real time at 1:1 speed:
+#
+#     fileTime = originTS + (wallNow - serverStartTime)
+#
+#   So the samples below, spaced 30s apart, will become visible 30 seconds
+#   after the previous one, relative to server start.
+
+# --- desired_replica samples (accelerator_type and capacity are empty) ---
+1700000000, test-app, , , , 2
+1700000030, test-app, , , , 3
+1700000060, test-app, , , , 4
+1700000090, test-app, , , , 3
+
+# --- desired_capacity: gpu compute (fractional percentage, 0-100) ---
+1700000000, test-app, vllm-container, gpu.example.com, compute, 40
+1700000030, test-app, vllm-container, gpu.example.com, compute, 60
+1700000060, test-app, vllm-container, gpu.example.com, compute, 75
+1700000090, test-app, vllm-container, gpu.example.com, compute, 60
+
+# --- desired_capacity: gpu memory (bytes) ---
+1700000000, test-app, vllm-container, gpu.example.com, memory, 4294967296
+1700000030, test-app, vllm-container, gpu.example.com, memory, 8589934592
+1700000060, test-app, vllm-container, gpu.example.com, memory, 8589934592
+1700000090, test-app, vllm-container, gpu.example.com, memory, 6442450944

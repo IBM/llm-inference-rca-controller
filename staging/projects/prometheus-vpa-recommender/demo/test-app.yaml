@@ -1,0 +1,70 @@
+---
+apiVersion: resource.k8s.io/v1
+kind: ResourceClaimTemplate
+metadata:
+  name: gpu-claim
+  namespace: default
+spec:
+  spec:
+    devices:
+      requests:
+      - name: gpu
+        exactly:
+          deviceClassName: gpu.example.com
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: test-app
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: test-app
+  template:
+    metadata:
+      labels:
+        app: test-app
+    spec:
+      resourceClaims:
+      - name: gpu-claim
+        resourceClaimTemplateName: gpu-claim
+      containers:
+      - name: app
+        image: nginx:alpine
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          claims:
+          - name: gpu-claim
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: test-app-vpa
+  namespace: default
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: test-app
+  recommenders:
+    - name: prometheus
+  resourcePolicy:
+    resourceClaimPolicies:
+    - claimTemplateName: gpu-claim
+      deviceClassName: gpu.example.com
+      controlledCapacities:
+      - compute
+      - memory
+      minAllowed:
+        compute: "10"
+        memory: "1Gi"
+      maxAllowed:
+        compute: "100"
+        memory: "16Gi"
+  updatePolicy:
+    updateMode: "DRARecreate"
+    minReplicas: 1

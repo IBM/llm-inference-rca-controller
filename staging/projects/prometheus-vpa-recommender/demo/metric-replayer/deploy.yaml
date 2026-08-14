@@ -1,0 +1,113 @@
+---
+# ConfigMap holds the metrics CSV that the replayer will serve.
+# Edit the data under metrics.csv to change what the server replays,
+# then restart the Deployment (kubectl rollout restart deployment metric-replayer).
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: metric-replayer-data
+  namespace: default
+data:
+  metrics.csv: |
+    # timestamp, variant_name, target_container, accelerator_type, capacity, value
+    #
+    # accelerator_type and capacity both empty → desired_replica sample
+    # accelerator_type or capacity non-empty  → desired_capacity sample
+    #
+    # Timestamps are replayed relative to server start:
+    #   first sample is visible immediately; each subsequent sample
+    #   appears as many real seconds later as the gap in the file.
+    #   (samples below are spaced 30 s apart)
+
+    # desired_replica
+    1700000000, test-app, , , , 2
+    1700000030, test-app, , , , 3
+    1700000060, test-app, , , , 4
+    1700000090, test-app, , , , 3
+
+    # desired_capacity — gpu compute (0-100)
+    1700000000, test-app, vllm-container, gpu.example.com, compute, 40
+    1700000030, test-app, vllm-container, gpu.example.com, compute, 60
+    1700000060, test-app, vllm-container, gpu.example.com, compute, 75
+    1700000090, test-app, vllm-container, gpu.example.com, compute, 60
+
+    # desired_capacity — gpu memory (bytes)
+    1700000000, test-app, vllm-container, gpu.example.com, memory, 14294967296
+    1700000030, test-app, vllm-container, gpu.example.com, memory, 18589934592
+    1700000060, test-app, vllm-container, gpu.example.com, memory, 18589934592
+    1700000090, test-app, vllm-container, gpu.example.com, memory, 16442450944
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metric-replayer
+  namespace: default
+  labels:
+    app: metric-replayer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: metric-replayer
+  template:
+    metadata:
+      labels:
+        app: metric-replayer
+    spec:
+      containers:
+      - name: metric-replayer
+        image: localhost/metric-replayer:v1.0.0
+        imagePullPolicy: IfNotPresent
+        args:
+        - -metrics-file=/data/metrics.csv
+        - -addr=:9090
+        ports:
+        - name: http
+          containerPort: 9090
+          protocol: TCP
+        volumeMounts:
+        - name: metrics-data
+          mountPath: /data
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 9090
+          initialDelaySeconds: 2
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 9090
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: 10m
+            memory: 32Mi
+          limits:
+            cpu: 100m
+            memory: 64Mi
+      volumes:
+      - name: metrics-data
+        configMap:
+          name: metric-replayer-data
+---
+# The Service is named "prometheus" so it matches the recommender's default
+# --prometheus-url (http://prometheus.default.svc.cluster.local:9090) without
+# any extra configuration.
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: default
+  labels:
+    app: metric-replayer
+spec:
+  selector:
+    app: metric-replayer
+  ports:
+  - name: http
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  type: ClusterIP

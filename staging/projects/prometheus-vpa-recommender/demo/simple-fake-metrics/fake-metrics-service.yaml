@@ -1,0 +1,160 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fake-prometheus-responses
+  namespace: default
+data:
+  query-handler.lua: |
+    -- Lua script to handle Prometheus queries
+    local cjson = require "cjson"
+
+    -- 1. Set the correct Content-Type header immediately
+    ngx.header.content_type = "application/json; charset=utf-8"
+
+    -- Read request body for POST requests
+    ngx.req.read_body()
+    
+    -- Get query parameter from URI args (GET) or post args (POST)
+    local args = ngx.req.get_uri_args()
+    local query = args.query
+    
+    -- If not in URI args, check POST body
+    if not query then
+      local post_args = ngx.req.get_post_args()
+      query = post_args.query
+    end
+    
+    query = query or ""
+
+    -- Log the query for debugging
+    ngx.log(ngx.ERR, "Received query: ", query)
+    ngx.log(ngx.ERR, "Request method: ", ngx.var.request_method)
+
+    -- Default empty response structure
+    -- Use cjson.empty_array to ensure result is encoded as [] not {}
+    local response = {
+      status = "success",
+      data = {
+        resultType = "vector",
+        result = cjson.empty_array
+      }
+    }
+
+    -- Check for desired_replica
+    if string.find(query, "desired_replica") then
+      ngx.log(ngx.INFO, "Matched desired_replica query")
+      response.data.result = {
+        {
+          metric = { deployment = "test-app" },
+          value = { 1234567890, "3" }
+        }
+      }
+    -- Check for desired_capacity with gpu.example.com/compute
+    elseif string.find(query, "desired_capacity") and string.find(query, "gpu%.nvidia%.com/compute") then
+      ngx.log(ngx.INFO, "Matched gpu.example.com/compute query")
+      response.data.result = {
+        {
+          metric = {
+            deployment = "test-app",
+            container = "app",
+            capacity_name = "gpu.example.com/compute"
+          },
+          value = { 1234567890, "60" }
+        }
+      }
+    -- Check for desired_capacity with gpu.example.com/memory
+    elseif string.find(query, "desired_capacity") and string.find(query, "gpu%.nvidia%.com/memory") then
+      ngx.log(ngx.INFO, "Matched gpu.example.com/memory query")
+      response.data.result = {
+        {
+          metric = {
+            deployment = "test-app",
+            container = "app",
+            capacity_name = "gpu.example.com/memory"
+          },
+          value = { 1234567890, "8589934592" }
+        }
+      }
+    else
+      ngx.log(ngx.INFO, "No match found for query")
+    end
+
+    -- Encode the payload
+    local json_response = cjson.encode(response)
+
+    -- 2. Set Content-Length for better HTTP performance/compliance
+    ngx.header.content_length = string.len(json_response)
+
+    -- 3. Output without adding newline (use ngx.print instead of ngx.say)
+    ngx.print(json_response)
+    ngx.exit(ngx.HTTP_OK)
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fake-prometheus
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fake-prometheus
+  template:
+    metadata:
+      labels:
+        app: fake-prometheus
+    spec:
+      containers:
+      - name: openresty
+        image: openresty/openresty:alpine
+        ports:
+        - containerPort: 80
+          name: http
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d
+        - name: lua-script
+          mountPath: /usr/local/openresty/nginx/lua
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-prometheus-config
+      - name: lua-script
+        configMap:
+          name: fake-prometheus-responses
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-prometheus-config
+  namespace: default
+data:
+  default.conf: |
+    server {
+        listen 80;
+        
+        location /api/v1/query {
+            default_type application/json;
+            content_by_lua_file /usr/local/openresty/nginx/lua/query-handler.lua;
+        }
+        
+        location /health {
+            return 200 "OK\n";
+            add_header Content-Type text/plain;
+        }
+    }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: default
+spec:
+  selector:
+    app: fake-prometheus
+  ports:
+  - port: 9090
+    targetPort: 80
+    name: http
+  type: ClusterIP
