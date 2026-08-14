@@ -5,3 +5,7 @@
 	path = staging/projects/k8s-autoscaler
 	url = https://github.com/sunya-ch/k8s-autoscaler.git
 	branch = dra-autoscaler
+[submodule "staging/projects/llm-d-workload-variant-autoscaler"]
+	path = staging/projects/llm-d-workload-variant-autoscaler
+	url = https://github.com/sunya-ch/llm-d-workload-variant-autoscaler.git
+	branch = implement-vertical
