@@ -1,3 +1,7 @@
 [submodule "staging/projects/dra-example-driver"]
 	path = staging/projects/dra-example-driver
 	url = https://github.com/kubernetes-sigs/dra-example-driver.git
+[submodule "staging/projects/k8s-autoscaler"]
+	path = staging/projects/k8s-autoscaler
+	url = https://github.com/sunya-ch/k8s-autoscaler.git
+	branch = dra-autoscaler
