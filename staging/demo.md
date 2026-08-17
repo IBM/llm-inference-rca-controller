@@ -222,6 +222,22 @@ Reflect on ResourceClaim's patch:
           shareID: 390d099c-5b35-48ac-82aa-8fc3fe3c4b23
 ```
 
+#### with inference-perf
+
+```sh
+kubectl port-forward -n workload-variant-autoscaler-monitoring   prometheus-kube-prometheus-stack-prometheus-0 30909:9090
+```
+
+```sh
+kubectl port-forward -n llm-d-sim                                sample-deployment-69676f6f7-d7ttl 30080:8000
+```
+
+```sh
+cd llm-d/inference-perf
+conda activate py314
+python -m inference_perf.main --config examples/vllm/config-random-test-model.yml
+```
+
 ### with llm-d
 
 TBD
