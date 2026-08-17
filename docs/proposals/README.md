@@ -54,25 +54,22 @@ The below figure shows the current architecture of the project. Details of the c
 
 ![current architecture](../fig/rac-controller-inhouse.png)
 
-### Upstream Integration Proposals
+### Upstream Integration
 
-- [Proposal(s) to llm-d/llm-d-workload-variant-autoscaler](./llm-d/llm-d-workload-variant-autoscaler/) - [Unavailable]
-- [Proposal(s) to kubernetes/autoscaler](./kubernetes/autoscaler/) - [Initial Draft Available]
+We have proposed a new feature to two projects those are (i) Workload Variant Autoscaler under llm-d organization and (ii) Vertical Pod Autoscaler under Kubernetes Autoscaler. The overview of control flow is as below, consisting of 6 operational namespaces.
 
-To complete the picture, remaining components and modifications are planned as below.
+![](../fig/control-flow.png)
 
-![target migration](../fig/upstreams-target.png)
+For more details of each proposal, check
 
-### New Projects
+- [Proposal(s) to llm-d/llm-d-workload-variant-autoscaler](./llm-d/llm-d-workload-variant-autoscaler/)
+- [Proposal(s) to kubernetes/autoscaler](./kubernetes/autoscaler/)
 
-- [llm-d/rca-controller](./llm-d/rca-controller/) - Standalone ResourceClaim autoscaler controller - [Unavailable]
-- [tbd/prometheus-vpa-recommender](./tbd/prometheus-vpa-recommender/) - Prometheus-based VPA recommender - [Initial Draft Available]
+In addition to the core integration proposal, we also introduce a new project called [prometheus-vpa-recommender](./tbd/prometheus-vpa-recommender/) - Prometheus-based VPA recommender to bind the `llm-d-workload-variant-autoscaler` with the `VerticalPodAutoscaler` in `kubernetes/autoscaler`.
 
-### Enhancements to Existing Projects
+Other upstream contributions related to this project:
 
-- [kubernetes-sigs/dra-example-driver](https://github.com/kubernetes-sigs/dra-example-driver): Add consumable capacity feature support [PR#236](https://github.com/kubernetes-sigs/dra-example-driver/pull/236)
-- [llm-d/llm-d-inference-sim](https://github.com/llm-d/llm-d-inference-sim): Add resource consumption estimation and metrics - [Unavailable]
-- [vllm-project/vllm](https://github.com/vllm-project/vllm): Add resource consumption metrics - [Unavailable]
+- [kubernetes-sigs/dra-example-driver](https://github.com/kubernetes-sigs/dra-example-driver): Add consumable capacity feature support [PR#236](https://github.com/kubernetes-sigs/dra-example-driver/pull/236) - **Merged**
 
 ## Next Phase: In-Place Resizing Feature
 
@@ -91,13 +88,13 @@ To achieve this, we are planning to propose enhancements to:
 
 **Goal**: Plan integraion strategy
 
-- [ ] Conduct thorough analysis of existing components
-- [ ] Identify integration points between components
-- [ ] Evaluate compatibility and potential conflicts
-- [ ] Define clear integration requirements
-- [ ] Create detailed integration plan
-- [ ] Identify potential risks and mitigation strategies
-- [ ] Reach out to the community for feedback
+- [x] Conduct thorough analysis of existing components
+- [x] Identify integration points between components
+- [x] Evaluate compatibility and potential conflicts
+- [x] Define clear integration requirements
+- [x] Create detailed integration plan
+- [x] Identify potential risks and mitigation strategies
+- [x] Reach out to the community for feedback
 
 **Deliverables**:
 
@@ -112,18 +109,17 @@ To achieve this, we are planning to propose enhancements to:
 
 **Goal**: Establish foundation for resource claim autoscaler
 
-- [ ] Implement DRA support in Kubernetes VerticalPodAutoscaler
-- [ ] Implement vertical scaling support in llm-d autoscaler
-  - [ ] Add desired device resource capacity metrics
-  - [ ] Implement QueuingModelWithResourceUsageAnalyzer
-  - [ ] Implement MultidimensionalOptimizer
+- [x] Implement DRA support in Kubernetes VerticalPodAutoscaler
+- [x] Implement vertical scaling support in llm-d autoscaler
+  - [x] Add desired device resource capacity metrics
+  - [x] Implement QueuingModelWithResourceUsageAnalyzer
+  - [x] Implement MultidimensionalOptimizer
 
 **Deliverables**:
 
 - Working prototype of integrated autoscaler
 - Comprehensive test suite
 - Documentation of integration points
-- Performance benchmarks
 
 ### Phase 3: Research and Refinement
 

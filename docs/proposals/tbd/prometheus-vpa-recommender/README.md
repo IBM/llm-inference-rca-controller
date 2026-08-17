@@ -2,7 +2,7 @@
 
 ## Status
 
-**Draft** - Target repository TBD
+**Implemented** - Target repository TBD
 
 <!-- TOC tocDepth:2..3 chapterDepth:2..6 -->
 
@@ -59,16 +59,19 @@ The recommender queries Prometheus for the following metrics:
 #### Capacity Metrics
 
 ```prometheus
-# Capacity values for extended resources (GPUs, etc.)
-# Format: desired_capacity{deployment="<name>", container="<name>", capacity_name="<device-class>/<capacity>"}
-desired_capacity{deployment="<deployment-name>", container="<container-name>", capacity_name="<capacity-name>"} <value>
+<capacity-metric-name>{
+    variant_name     = "<vpa-name>",
+    target_container = "<container-name>",
+    accelerator_type = "<deviceClassName>",
+    capacity         = "<capacity>",
+}
 
 # Examples:
-desired_capacity{deployment="my-app", container="app", capacity_name="vgpu.example.com/compute"} 60
-desired_capacity{deployment="my-app", container="app", capacity_name="vgpu.example.com/memory"} 8589934592
+desired_capacity{variant_name="my-app", target_container="app", accelerator_type="gpu.example.com", capacity="compute"} 60
+desired_capacity{variant_name="my-app", target_container="app", accelerator_type="gpu.example.com", capacity="memory"} 8589934592
 ```
 
-**Note**: The `capacity_name` should match the format `<deviceClassName>/<capacity>` as defined in the VPA's `resourceClaimPolicies`.
+**Note**: `variant_name` is the VPA name and the `accelerator_type`, and `capacity` must match the definition in the VPA's `resourceClaimPolicies`.
 
 ### VPA Configuration
 
@@ -158,3 +161,4 @@ Together with DRA driver, and autoscaler, the result of recommender should be re
 ## Timeline
 
 - 2026-06-30: Finish initial implementation, integration test with enhanced VPA autoscaler, and DRA example driver
+- 2026-08-14: Add to [staging branch of this repository](https://github.com/IBM/llm-inference-rca-controller/tree/staging/staging/projects/prometheus-vpa-recommender) with WVA support.
