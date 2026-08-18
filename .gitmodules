@@ -9,3 +9,7 @@
 	path = staging/projects/llm-d-workload-variant-autoscaler
 	url = https://github.com/sunya-ch/llm-d-workload-variant-autoscaler.git
 	branch = implement-vertical
+[submodule "staging/projects/llm-d-inference-sim"]
+	path = staging/projects/llm-d-inference-sim
+	url = https://github.com/sunya-ch/llm-d-inference-sim.git
+	branch = resource-aware

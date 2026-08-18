@@ -138,6 +138,21 @@ Workspace: `projects/llm-d-workload-variant-autoscaler`
 
 ### with llm-d-inference-sim
 
+#### Build and load resource-aware llm-d-inference-sim
+
+Workspace: `projects/llm-d-inference-sim`
+
+```sh
+CONTAINER_TOOL=podman make image-build
+KIND_CLUSTER_NAME=kind
+IMAGE=ghcr.io/llm-d/llm-d-inference-sim:dev
+podman save ${IMAGE} -o /tmp/image.tar
+kind load image-archive /tmp/image.tar --name ${KIND_CLUSTER_NAME}
+rm /tmp/image.tar
+```
+
+#### Deploy
+
 Deploy app:
 
 ```sh
