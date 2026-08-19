@@ -1,8 +1,24 @@
 # Run Demo of Upstream Integration
 
-Workspace: `staging`
+## Clone Repository, Initialize
+
+```sh
+git clone https://github.com/llm-d/llm-inference-rca-controller.git
+cd llm-inference-rca-controller
+git checkout staging
+git submodule update --init --recursive
+```
+
+If you have already initialized the repository, ensure the submodules are synced:
+
+```sh
+git submodule sync --recursive
+git submodule update --remote --recursive
+```
 
 ## Prepare Cluster and Related Components
+
+Workspace: `staging`
 
 ### Create Kind Cluster, Build, and Deploy VPA Autoscaler
 
