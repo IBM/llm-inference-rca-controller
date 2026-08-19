@@ -1,0 +1,104 @@
+---
+apiVersion: resource.k8s.io/v1
+kind: ResourceClaimTemplate
+metadata:
+  name: gpu-claim
+  namespace: llm-d-sim
+spec:
+  spec:
+    devices:
+      requests:
+        - name: gpu
+          exactly:
+            deviceClassName: gpu.example.com
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-deployment
+  namespace: llm-d-sim
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: dev-model-decode
+      llm-d.ai/inferenceServing: 'true'
+      llm-d.ai/model: random
+      llm-d.ai/model-pool: optimized-baseline
+      llm-d.ai/guide: optimized-baseline
+      llm-d.ai/inference-serving: 'true'
+      llm-d.ai/accelerator-variant: cpu
+      llm-d.ai/role: decode
+  template:
+    metadata:
+      labels:
+        app: dev-model-decode
+        llm-d.ai/inferenceServing: 'true'
+        llm-d.ai/model: random
+        llm-d.ai/model-pool: optimized-baseline
+        llm-d.ai/guide: optimized-baseline
+        llm-d.ai/inference-serving: 'true'
+        llm-d.ai/accelerator-variant: cpu
+        llm-d.ai/role: decode
+        inference.optimization/acceleratorName: NVIDIA-A100-PCIE-80GB
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: dev-model-decode
+          image: ghcr.io/llm-d/llm-d-inference-sim:dev
+          imagePullPolicy: IfNotPresent
+          args:
+          - --model=test-model
+          - --port=8000
+          - --latency-calculator=per-token
+          - --inter-token-latency=12ms
+          - --inter-token-latency-std-dev=2ms
+          - --prefill-overhead=30ms
+          - --prefill-time-per-token=250us
+          - --prefill-time-std-dev=5ms
+          - --kv-cache-transfer-time-per-token=3us
+          - --kv-cache-transfer-time-std-dev=200us
+          - --time-factor-under-load=2.0
+          - --mode=random
+          - --enable-kvcache
+          - --block-size=16
+          - --max-num-seqs=16
+          - --num-hidden-layers=32
+          - --num-kv-heads=8
+          - --head-dim=128
+          - --model-weights-size-gb=16
+          - --gpu-memory-utilization=0.9
+          - --kv-cache-dtype=float16
+          - -v=2
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.name
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  apiVersion: v1
+                  fieldPath: status.podIP
+          resources:
+            requests:
+              cpu: 500m
+              memory: 256Mi
+            claims:
+              - name: gpu-claim
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      resourceClaims:
+        - name: gpu-claim
+          resourceClaimTemplateName: gpu-claim
