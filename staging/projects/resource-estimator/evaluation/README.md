@@ -23,6 +23,7 @@ evaluation/
   scripts/
     run_workload.py      running vLLM servers -> raw data
     mps.sh               start / stop an MPS daemon with an SM cap
+    dcgm-counters.csv    the DCGM series dcgm-exporter must report for run_workload.py
     reduce_raw.py        raw data -> processed CSVs
   data/gpu/
     sources/             raw data of one experiment per directory: raw/, logs/, scripts/ (the acquisition scripts)
@@ -39,7 +40,7 @@ Runs one sweep (one `vllm bench serve` per point) against vLLM servers that are 
 `/metrics` endpoints of every vLLM instance and of dcgm-exporter directly, each `--step` seconds (default 5), until
 `--pad-after` seconds (default 45) after the point ends because DCGM lags the load. No Prometheus is needed. The samples
 are written in the shape `reduce_raw.py` reads. It needs `vllm` on `PATH`, `nvidia-smi`, and a dcgm-exporter
-(default `http://127.0.0.1:9400/metrics`) reporting `DCGM_FI_PROF_*`.
+(default `http://127.0.0.1:9400/metrics`) reporting `DCGM_FI_PROF_*` (see [dcgm-exporter](#scriptsdcgm-counterscsv-dcgm-exporter)).
 
 Single GPU and disaggregated runs use the same call: one `--instance [ROLE=]URL@GPU` per vLLM server, where `GPU` is the
 CUDA index on this host (mapped to dcgm-exporter's own `gpu` label through the GPU UUID).
@@ -77,6 +78,17 @@ evaluation/scripts/mps.sh stop
 The SM cap is fixed when the server attaches: to change it, stop the server, run `start` again and restart the server. The
 GPU must have no other CUDA context. `MPS_DIR` (default `$TMPDIR/mps-<uid>`) holds the pipe and log directories.
 
+### `scripts/dcgm-counters.csv`: dcgm-exporter
+
+In the environment where dcgm-exporter is not available, start dcgm-exporter with `scripts/dcgm-counters.csv` as its counters file, for example with Apptainer:
+
+```bash
+apptainer pull dcgm-exporter.sif docker://nvcr.io/nvidia/k8s/dcgm-exporter:4.5.2-4.8.1-ubuntu22.04
+apptainer exec --nv -B evaluation/scripts/dcgm-counters.csv:/etc/dcgm-exporter/default-counters.csv \
+    dcgm-exporter.sif dcgm-exporter -a :9400 &
+curl -s http://127.0.0.1:9400/metrics | grep '^DCGM_FI_PROF_SM_ACTIVE'   # one line per GPU
+```
+
 ## `scripts/reduce_raw.py`: raw data to CSV
 
 Reduces every run to one row over one steady window: the start is the first sample with running requests plus
@@ -101,7 +113,7 @@ python evaluation/scripts/reduce_raw.py disaggregated llama_disagg
 Each writes `data/gpu/processed/<group>/<dataset>.csv`.
 
 | option | meaning |
-|---|---|
+| --- | --- |
 | `--raw-root DIR` | a directory of `<dataset>/raw`, searched first |
 | `--out DIR` | the processed directory; default `evaluation/data/gpu/processed` |
 
