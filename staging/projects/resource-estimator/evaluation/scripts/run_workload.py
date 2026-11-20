@@ -222,8 +222,11 @@ def run_bench(args: argparse.Namespace, base_url: str, point: Point, bench_dir: 
     """vllm bench serve for one point; the wall-clock window it ran in is saved to window_path."""
     result_dir = os.path.join(bench_dir, f"BENCH--{point.name}")
     os.makedirs(result_dir, exist_ok=True)
+    # e2el is not in vllm bench serve's default --percentile-metrics (ttft,tpot,itl), and reduce_raw.py reads
+    # mean_e2el_ms from the result
     cmd = ["vllm", "bench", "serve", "--backend", "vllm", "--model", args.model, "--base-url", base_url,
            "--endpoint", "/v1/completions", "--ignore-eos", "--seed", "0", "--save-result", "--save-detailed",
+           "--percentile-metrics", "ttft,tpot,itl,e2el",
            "--result-dir", result_dir, "--result-filename", "run=0.json"] + point.bench_args
     log("running: " + " ".join(cmd))
     start = time.time()

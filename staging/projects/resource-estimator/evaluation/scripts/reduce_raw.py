@@ -184,7 +184,9 @@ def reduce_run(metrics_path: str, extra_path: str, bench_path: str, input_tokens
         "preemptions": w.delta("vllm:num_preemptions_total") if "vllm:num_preemptions_total" in extra else np.nan,
         "kv_max_pct": float(w.values("vllm:kv_cache_usage_perc").max()) * 100,
         "kv_pool_tokens": int(cache["kv_cache_size_tokens"]),
-        "gpu_memory_utilization": float(cache["gpu_memory_utilization"]),
+        # vLLM 0.34 reports it as 'None' when the server is started without --gpu-memory-utilization
+        "gpu_memory_utilization": np.nan if cache["gpu_memory_utilization"] == "None"
+                                  else float(cache["gpu_memory_utilization"]),
         "dcgm_window_s": w.end - w.dcgm_start,
         "status": "ok",
     })
