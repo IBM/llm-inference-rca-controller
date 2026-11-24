@@ -1,0 +1,11 @@
+# dcgm-exporter counters for run_workload.py: the DCGM series it scrapes (DCGM_METRICS there).
+# Required to get DCGM metrics below.
+
+# Format: DCGM field, Prometheus metric type, help message
+
+DCGM_FI_PROF_SM_ACTIVE,          gauge, The ratio of cycles an SM has at least 1 warp assigned.
+DCGM_FI_PROF_SM_OCCUPANCY,       gauge, The ratio of number of warps resident on an SM.
+DCGM_FI_PROF_PIPE_TENSOR_ACTIVE, gauge, Ratio of cycles the tensor (HMMA) pipe is active.
+DCGM_FI_PROF_DRAM_ACTIVE,        gauge, Ratio of cycles the device memory interface is active sending or receiving data.
+DCGM_FI_DEV_FB_USED,             gauge, Framebuffer memory used (in MiB).
+DCGM_FI_DEV_FB_TOTAL,            gauge, Total framebuffer memory (in MiB).
